@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"library-api/helpers"
 	"library-api/library"
-	"library-api/store"
 	"net/http"
 	"strconv"
 
@@ -63,7 +62,6 @@ func (h *HTTPHandlers) HandleCreateBook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	store.SaveData(h.library.Books)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(b)
 }
@@ -131,7 +129,6 @@ func (h *HTTPHandlers) HandleDeleteBook(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	store.SaveData(h.library.Books)
 }
 
 /*
@@ -212,8 +209,6 @@ func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *htt
 		DoError(err, w, http.StatusInternalServerError)
 		return
 	}
-
-	store.SaveData(h.library.Books)
 }
 
 /*
