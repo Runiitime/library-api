@@ -14,7 +14,6 @@ func CreateConnection(ctx context.Context) (*pgx.Conn, error) {
 	}
 
 	connStr := getConnectionString()
-	fmt.Println(connStr)
 
 	return pgx.Connect(ctx, connStr)
 }
