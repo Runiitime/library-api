@@ -1,0 +1,40 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+type BookDTO struct {
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Pages  int    `json:"pages"`
+}
+
+type ErrorDTO struct {
+	Message string `json:"message"`
+}
+
+type BookStatusDTO struct {
+	Completed bool `json:"completed"`
+}
+
+func (e *ErrorDTO) ToString() string {
+	b, err := json.MarshalIndent(e, "", "    ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return string(b)
+}
+
+func DoError(e error, w http.ResponseWriter, status ...int) {
+	httpStatus := http.StatusBadRequest
+	if len(status) > 0 {
+		httpStatus = status[0]
+	}
+
+	errDTO := ErrorDTO{Message: e.Error()}
+	http.Error(w, errDTO.ToString(), httpStatus)
+}
