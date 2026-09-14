@@ -1,8 +1,8 @@
-package queries
+package storage
 
 import (
 	"context"
-	"library-api/db/models"
+	"library-api/models"
 
 	"github.com/jackc/pgx/v5"
 )

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"library-api/db"
-	"library-api/db/queries"
+	"library-api/config"
+	"library-api/storage"
 )
 
 func main() {
@@ -17,15 +17,16 @@ func main() {
 	//	fmt.Println("Failed to start HTTP server:", err)
 	//}
 	ctx := context.Context(context.Background())
+	cfg := config.GetConfig()
 
-	conn, err := db.CreateConnection(ctx)
+	conn, err := storage.CreateConnection(ctx, cfg)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Connected to database")
 
-	if err := queries.CreateTable(conn, ctx, "library"); err != nil {
+	if err := storage.CreateTable(conn, ctx, "library"); err != nil {
 		panic(err)
 	}
 
