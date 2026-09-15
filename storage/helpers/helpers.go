@@ -12,7 +12,7 @@ func ConvertRows(rows pgx.Rows) ([]models.Book, error) {
 	books := make([]models.Book, 0)
 
 	if err := rows.Err(); err != nil {
-		log.Fatalln(bookErr.ErrRows, err)
+		log.Println(bookErr.ErrRows, err)
 		return books, bookErr.ErrRows
 	}
 
@@ -30,7 +30,7 @@ func ConvertRows(rows pgx.Rows) ([]models.Book, error) {
 			&book.CreatedAt,
 			&book.CompletedAt,
 		); err != nil {
-			log.Fatalln(bookErr.ErrRowScan, err)
+			log.Println(bookErr.ErrRowScan, err)
 			return books, bookErr.ErrRowScan
 		}
 
