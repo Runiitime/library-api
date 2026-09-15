@@ -2,32 +2,29 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"library-api/db"
-	"library-api/db/queries"
+	"library-api/config"
+	"library-api/handlers"
+	"library-api/storage"
+	"log"
 )
 
 func main() {
-	//libraryBooks := library.NewLibrary()
-
-	//handlers := api.NewHTTPHandlers(libraryBooks)
-	//server := api.NewServer(handlers)
-	//
-	//if err := server.StartServer(":9091"); err != nil {
-	//	fmt.Println("Failed to start HTTP server:", err)
-	//}
 	ctx := context.Context(context.Background())
+	cfg := config.GetConfig()
 
-	conn, err := db.CreateConnection(ctx)
+	conn, err := storage.CreateConnection(ctx, cfg)
+
+	bookQuery := storage.NewBookQuery("library", conn)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Connected to database")
+	log.Println("Connected to database")
 
-	if err := queries.CreateTable(conn, ctx, "library"); err != nil {
-		panic(err)
+	hdls := handlers.NewHTTPHandlers(bookQuery)
+	server := handlers.NewServer(hdls)
+
+	if err := server.StartServer(":9091"); err != nil {
+		log.Fatalln("Failed to start HTTP server:", err)
 	}
-
-	fmt.Println("Created table library")
 }

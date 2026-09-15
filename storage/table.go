@@ -1,4 +1,4 @@
-package queries
+package storage
 
 import (
 	"context"
@@ -17,9 +17,7 @@ func CreateTable(conn *pgx.Conn, ctx context.Context, table string) error {
 	published VARCHAR(4) NOT NULL,
 	completed BOOLEAN NOT NULL,
 	created_at TIMESTAMP NOT NULL,
-	completed_at TIMESTAMP,
-
-	UNIQUE (title)
+	completed_at TIMESTAMP
 	);`
 
 	_, err := conn.Exec(ctx, q)

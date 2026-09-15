@@ -1,29 +1,24 @@
-package db
+package config
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/cloudresty/go-env"
-	"github.com/jackc/pgx/v5"
 )
 
-func CreateConnection(ctx context.Context) (*pgx.Conn, error) {
+func GetConfig() string {
 	if err := env.Load(); err != nil {
 		panic(err)
 	}
-
-	connStr := getConnectionString()
-
-	return pgx.Connect(ctx, connStr)
+	return getConnectionString()
 }
 
 func getConnectionString() string {
 	dbName := env.Get("DB_NAME", "postgres")
 	dbUser := env.Get("DB_USER", "postgres")
 	dbPassword := env.Get("DB_PASSWORD", "postgres")
-	dbUrl := env.Get("DB_URL", "postgres")
+	dbHost := env.Get("DB_HOST", "localhost")
 	dbPort := env.Get("DB_PORT", "5432")
 
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbUrl, dbPort, dbName)
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
 }

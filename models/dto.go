@@ -1,15 +1,9 @@
-package api
+package models
 
 import (
 	"encoding/json"
 	"net/http"
 )
-
-type BookDTO struct {
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	Pages  int    `json:"pages"`
-}
 
 type ErrorDTO struct {
 	Message string `json:"message"`

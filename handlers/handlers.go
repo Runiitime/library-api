@@ -1,11 +1,13 @@
-package api
+package handlers
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"library-api/helpers"
-	"library-api/library"
+	"library-api/models"
+	"library-api/storage"
+	bookErr "library-api/storage/errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -13,12 +15,12 @@ import (
 )
 
 type HTTPHandlers struct {
-	library *library.Library
+	queries *storage.BookQuery
 }
 
-func NewHTTPHandlers(l *library.Library) *HTTPHandlers {
+func NewHTTPHandlers(queries *storage.BookQuery) *HTTPHandlers {
 	return &HTTPHandlers{
-		library: l,
+		queries: queries,
 	}
 }
 
@@ -38,27 +40,28 @@ failed:
   - response body: JSON with error
 */
 func (h *HTTPHandlers) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
-	var data BookDTO
+	var data models.Book
 
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&data); err != nil {
-		DoError(library.ErrJSONInmarshal, w, http.StatusInternalServerError)
+		models.DoError(bookErr.ErrJSONUnmarshal, w, http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.library.ValidateBookCreation(data.Title, data.Author); err != nil {
-		DoError(err, w)
-		return
+	id, err := h.queries.CreateBook(r.Context(), data)
+	if err != nil {
+		log.Panic(err)
 	}
 
-	newBook := library.NewBook(data.Title, data.Author, data.Pages)
+	data.ID = id
 
-	h.library.AddBook(*newBook, helpers.GenerateID())
-	b, err := json.MarshalIndent(newBook, "", "    ")
+	log.Println("Книга была создана")
+
+	b, err := json.MarshalIndent(data, "", "    ")
 
 	if err != nil {
-		DoError(library.ErrJSONInmarshal, w, http.StatusInternalServerError)
+		models.DoError(bookErr.ErrJSONUnmarshal, w, http.StatusInternalServerError)
 		return
 	}
 
@@ -81,26 +84,29 @@ failed:
   - status code: 400, 404, 500
   - response body: JSON with error
 */
-func (h *HTTPHandlers) HandleGetBook(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandlers) HandleGetBookByID(w http.ResponseWriter, r *http.Request) {
 	id, _ := mux.Vars(r)["id"]
-	book, err := h.library.FindBook(id)
+
+	n, _ := strconv.Atoi(id)
+	books, err := h.queries.SelectBooksByID(r.Context(), []int{n})
 
 	if err != nil {
-		if errors.Is(err, library.ErrBookNotFound) {
-			DoError(err, w, http.StatusNotFound)
-			return
-		}
-		DoError(err, w, http.StatusInternalServerError)
+		models.DoError(err, w)
 		return
 	}
 
-	b, err := json.MarshalIndent(book, "", "    ")
+	if len(books) == 0 {
+		models.DoError(bookErr.ErrBookNotFound, w, http.StatusNotFound)
+		return
+	}
+
+	b, err := json.MarshalIndent(books[0], "", "    ")
 	if err != nil {
 		panic(err)
 	}
 
 	if _, err := w.Write(b); err != nil {
-		DoError(err, w, http.StatusInternalServerError)
+		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
 }
@@ -122,9 +128,18 @@ failed:
 */
 func (h *HTTPHandlers) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	id, _ := mux.Vars(r)["id"]
+	bookID, err := strconv.Atoi(id)
+	if err != nil {
+		models.DoError(err, w, http.StatusNotFound)
+		return
+	}
 
-	if err := h.library.DeleteBook(id); err != nil {
-		DoError(err, w, http.StatusNotFound)
+	if err := h.queries.DeleteBook(r.Context(), bookID); err != nil {
+		if errors.Is(err, bookErr.ErrBookNotFound) {
+			models.DoError(bookErr.ErrBookNotFound, w, http.StatusNotFound)
+			return
+		}
+		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
 
@@ -147,12 +162,14 @@ failed:
   - response body: JSON with error
 */
 func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := h.library.GetAllBooks()
-
+	books, err := h.queries.SelectAllBooks(r.Context())
 	if err != nil {
-		if !errors.Is(err, library.ErrLibraryIsEmpty) {
-			DoError(err, w, http.StatusInternalServerError)
-		}
+		models.DoError(err, w, http.StatusInternalServerError)
+		return
+	}
+
+	if len(books) == 0 {
+		models.DoError(bookErr.ErrLibraryIsEmpty, w, http.StatusInternalServerError)
 		return
 	}
 
@@ -163,7 +180,7 @@ func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request)
 	}
 
 	if _, err := w.Write(b); err != nil {
-		DoError(err, w, http.StatusInternalServerError)
+		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
 }
@@ -174,8 +191,8 @@ method: PATCH
 info: pattern + JSON in request body { is_completed: bool }
 
 succeed:
-  - status code: 200 Ok
-  - response body: JSON represent changed book
+  - status code: 204 No content
+  - response body: -
 
 failed:
   - status code: 400, 404, 409, 500
@@ -186,29 +203,25 @@ func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *htt
 
 	decoder := json.NewDecoder(r.Body)
 
-	var status BookStatusDTO
+	var status models.BookStatusDTO
 
 	if err := decoder.Decode(&status); err != nil {
-		DoError(library.ErrJSONInmarshal, w, http.StatusInternalServerError)
+		models.DoError(bookErr.ErrJSONUnmarshal, w, http.StatusInternalServerError)
 		return
 	}
 
-	book, err := h.library.ChangeCompleted(id, status.Completed)
+	n, err := strconv.Atoi(id)
 
 	if err != nil {
-		DoError(err, w, http.StatusNotFound)
+		models.DoError(err, w, http.StatusBadRequest)
+	}
+
+	if err := h.queries.UpdateBookStatus(r.Context(), n, status.Completed); err != nil {
+		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.MarshalIndent(book, "", "    ")
-	if err != nil {
-		panic(err)
-	}
-
-	if _, err := w.Write(b); err != nil {
-		DoError(err, w, http.StatusInternalServerError)
-		return
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 /*
@@ -229,22 +242,21 @@ func (h *HTTPHandlers) HandleGetUncompletedBooks(w http.ResponseWriter, r *http.
 	param := query.Get("completed")
 
 	if param == "" {
-		DoError(library.ErrEmptyQuery, w)
+		models.DoError(bookErr.ErrEmptyQuery, w)
 		return
 	}
 
-	completed, err := strconv.ParseBool(param)
+	_, err := strconv.ParseBool(param)
 
 	if err != nil {
-		DoError(library.ErrWrongQueryParamValue, w)
+		models.DoError(bookErr.ErrWrongQueryParamValue, w)
 		return
 	}
 
-	books, err := h.library.FilterBooksByCompleted(completed)
-
+	books, err := h.queries.SelectBooksByParams(r.Context(), "completed", param)
 	if err != nil {
-		if errors.Is(library.ErrNoBooksFound, err) {
-			DoError(err, w, http.StatusOK)
+		if errors.Is(bookErr.ErrNoBooksFound, err) {
+			models.DoError(err, w, http.StatusOK)
 			return
 		}
 		panic(err)
@@ -257,7 +269,7 @@ func (h *HTTPHandlers) HandleGetUncompletedBooks(w http.ResponseWriter, r *http.
 	}
 
 	if _, err := w.Write(data); err != nil {
-		fmt.Println(library.ErrJsonWrite, err)
+		fmt.Println(bookErr.ErrJsonWrite, err)
 		return
 	}
 }
@@ -280,15 +292,14 @@ func (h *HTTPHandlers) HandleGetBooksByAuthor(w http.ResponseWriter, r *http.Req
 	param := query.Get("author")
 
 	if param == "" {
-		DoError(library.ErrEmptyQuery, w)
+		models.DoError(bookErr.ErrEmptyQuery, w)
 		return
 	}
 
-	books, err := h.library.FilterBooksByAuthor(param)
-
+	books, err := h.queries.SelectBooksByParams(r.Context(), "author", param)
 	if err != nil {
-		if errors.Is(library.ErrNoBooksFound, err) {
-			DoError(err, w, http.StatusOK)
+		if errors.Is(bookErr.ErrNoBooksFound, err) {
+			models.DoError(err, w, http.StatusOK)
 			return
 		}
 		panic(err)
@@ -301,7 +312,7 @@ func (h *HTTPHandlers) HandleGetBooksByAuthor(w http.ResponseWriter, r *http.Req
 	}
 
 	if _, err := w.Write(data); err != nil {
-		fmt.Println(library.ErrJsonWrite, err)
+		fmt.Println(bookErr.ErrJsonWrite, err)
 		return
 	}
 }
