@@ -21,7 +21,7 @@ func (s *HTTPServer) StartServer(port string) error {
 	router := mux.NewRouter()
 
 	router.Path("/books").Methods("POST").HandlerFunc(s.handlers.HandleCreateBook)
-	router.Path("/books/{id}").Methods("GET").HandlerFunc(s.handlers.HandleGetBook)
+	router.Path("/books/{id}").Methods("GET").HandlerFunc(s.handlers.HandleGetBookByID)
 	router.Path("/books").Methods("GET").Queries("completed", "{completed}").HandlerFunc(s.handlers.HandleGetUncompletedBooks)
 	router.Path("/books").Methods("GET").Queries("author", "{author}").HandlerFunc(s.handlers.HandleGetBooksByAuthor)
 	router.Path("/books").Methods("GET").HandlerFunc(s.handlers.HandleGetAllBooks)
