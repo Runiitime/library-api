@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -30,5 +31,6 @@ func DoError(e error, w http.ResponseWriter, status ...int) {
 	}
 
 	errDTO := ErrorDTO{Message: e.Error()}
+	log.Println(errDTO)
 	http.Error(w, errDTO.ToString(), httpStatus)
 }

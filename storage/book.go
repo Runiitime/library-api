@@ -4,6 +4,7 @@ import (
 	"context"
 	"library-api/models"
 	"library-api/storage/helpers"
+	bookMSG "library-api/storage/msg"
 	"log"
 	"time"
 
@@ -40,7 +41,12 @@ func (b *BookQuery) CreateBook(ctx context.Context, book models.Book) (int, erro
 		book.Completed,
 		book.CreatedAt).Scan(&id)
 
-	return id, err
+	if err != nil {
+		log.Println(bookMSG.ErrQueryRow, err)
+		return -1, err
+	}
+
+	return id, nil
 }
 
 func (b *BookQuery) DeleteBook(ctx context.Context, bookID int) error {
@@ -48,8 +54,16 @@ func (b *BookQuery) DeleteBook(ctx context.Context, bookID int) error {
 	DELETE FROM ` + b.tableName + `
 	WHERE id=$1
 	`
-	_, err := b.conn.Exec(ctx, q, bookID)
-	return err
+	tag, err := b.conn.Exec(ctx, q, bookID)
+	if err != nil {
+		log.Println(bookMSG.ErrExec, err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return bookMSG.ErrBookNotFound
+	}
+
+	return nil
 }
 
 func (b *BookQuery) SelectBooksByID(ctx context.Context, ids []int) ([]models.Book, error) {
@@ -60,7 +74,7 @@ func (b *BookQuery) SelectBooksByID(ctx context.Context, ids []int) ([]models.Bo
 
 	rows, err := b.conn.Query(ctx, q, ids)
 	if err != nil {
-		log.Printf("query error: %v", err)
+		log.Println(bookMSG.ErrQuery, err)
 		return nil, err
 	}
 
@@ -76,7 +90,7 @@ func (b *BookQuery) SelectAllBooks(ctx context.Context) ([]models.Book, error) {
 
 	rows, err := b.conn.Query(ctx, q)
 	if err != nil {
-		log.Printf("query error: %v", err)
+		log.Println(bookMSG.ErrQuery, err)
 		return nil, err
 	}
 
@@ -91,7 +105,7 @@ func (b *BookQuery) SelectBooksByParams(ctx context.Context, field string, value
 
 	rows, err := b.conn.Query(ctx, q, value)
 	if err != nil {
-		log.Printf("query error: %v", err)
+		log.Println(bookMSG.ErrQuery, err)
 		return nil, err
 	}
 
@@ -113,5 +127,10 @@ func (b *BookQuery) UpdateBookStatus(ctx context.Context, id int, isCompleted bo
 		id,
 	)
 
-	return err
+	if err != nil {
+		log.Println(bookMSG.ErrExec, err)
+		return err
+	}
+
+	return nil
 }
