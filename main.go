@@ -16,7 +16,7 @@ func main() {
 
 	bookQuery := storage.NewBookQuery("library", conn)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	log.Println("Connected to database")

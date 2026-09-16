@@ -2,14 +2,17 @@ package config
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/cloudresty/go-env"
 )
 
 func GetConfig() string {
 	if err := env.Load(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
+
+	log.Println("ENV was loaded")
 	return getConnectionString()
 }
 
