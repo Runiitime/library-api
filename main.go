@@ -8,6 +8,13 @@ import (
 	"log"
 )
 
+// @title           Library API
+// @version         1.0
+// @description     API Server for Library application
+// @termsOfService  http://swagger.io/terms/
+
+// @host      localhost:9091
+// @BasePath  /
 func main() {
 	ctx := context.Context(context.Background())
 	cfg := config.GetConfig()

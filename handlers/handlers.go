@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"library-api/models"
 	"library-api/storage"
 	bookMSG "library-api/storage/msg"
@@ -24,21 +23,17 @@ func NewHTTPHandlers(queries *storage.BookQuery) *HTTPHandlers {
 	}
 }
 
-/*
-pattern: /books
-method: POST
-info: JSON in HTTP request body
-
-succeed:
-
-  - status code: 201 Created
-  - response body: JSON represent created book
-
-failed:
-
-  - status code: 400, 409, 500
-  - response body: JSON with error
-*/
+// HandleCreateBook Create book
+//
+//	@Summary      Create a book
+//	@Description  create a book
+//	@Tags		  book
+//	@Accept       json
+//	@Produce      json
+//	@Param		  book	body	 models.Book	true	"book info"
+//	@Success      201  {object}  models.Book
+//	@Failure      500  {object}  models.ErrorDTO
+//	@Router       /books [post]
 func (h *HTTPHandlers) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 	var data models.Book
 
@@ -73,63 +68,16 @@ func (h *HTTPHandlers) HandleCreateBook(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-/*
-pattern: /books/{id}
-method: GET
-info: pattern
-
-succeed:
-
-  - status code: 200 Ok
-  - response body: JSON represent founded book
-
-failed:
-
-  - status code: 400, 404, 500
-  - response body: JSON with error
-*/
-func (h *HTTPHandlers) HandleGetBookByID(w http.ResponseWriter, r *http.Request) {
-	id, _ := mux.Vars(r)["id"]
-
-	n, _ := strconv.Atoi(id)
-	books, err := h.queries.SelectBooksByID(r.Context(), []int{n})
-
-	if err != nil {
-		models.DoError(err, w)
-		return
-	}
-
-	if len(books) == 0 {
-		models.DoError(bookMSG.ErrBookNotFound, w, http.StatusNotFound)
-		return
-	}
-
-	b, err := json.MarshalIndent(books[0], "", "    ")
-	if err != nil {
-		panic(err)
-	}
-
-	if _, err := w.Write(b); err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
-		return
-	}
-}
-
-/*
-pattern: /books/{id}
-method: DELETE
-info: pattern
-
-succeed:
-
-  - status code: 204 No content
-  - response body: -
-
-failed:
-
-  - status code: 400, 404, 500
-  - response body: JSON with error
-*/
+// HandleDeleteBook Delete book
+//
+//	@Summary      Delete a book
+//	@Description  delete a book by id
+//	@Tags		  book
+//	@Param		  id	path	 int	true	"book ID"	Format(int)
+//	@Success      204  {}  No content
+//	@Failure      404  {object}  models.ErrorDTO
+//	@Failure      500  {object}  models.ErrorDTO
+//	@Router       /books/{id}    [delete]
 func (h *HTTPHandlers) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	id, _ := mux.Vars(r)["id"]
 	bookID, err := strconv.Atoi(id)
@@ -150,32 +98,36 @@ func (h *HTTPHandlers) HandleDeleteBook(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-/*
-pattern: /books
-method: GET
-info: -
+// HandleGetBookByID Get book by id
+//
+//		@Summary      Get a book by id
+//		@Description  get a book by id
+//		@Tags		  book
+//		@Produce      json
+//	 	@Param 		  id path int true "book ID"	Format(int)
+//		@Success      200  {object}  models.Book
+//		@Failure      404  {object}  models.ErrorDTO
+//		@Failure      500  {object}  models.ErrorDTO
+//		@Router       /books/{id} [get]
+func (h *HTTPHandlers) HandleGetBookByID(w http.ResponseWriter, r *http.Request) {
+	id, _ := mux.Vars(r)["id"]
 
-succeed:
+	n, _ := strconv.Atoi(id)
+	books, err := h.queries.SelectBooksByID(r.Context(), []int{n})
 
-  - status code: 200 Ok
-  - response body: - JSON represent found books
-
-failed:
-
-  - status code: 400, 500
-  - response body: JSON with error
-*/
-func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := h.queries.SelectAllBooks(r.Context())
 	if err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
+		models.DoError(err, w)
 		return
 	}
 
-	b, err := json.MarshalIndent(books, "", "    ")
+	if len(books) == 0 {
+		models.DoError(bookMSG.ErrBookNotFound, w, http.StatusNotFound)
+		return
+	}
 
+	b, err := json.MarshalIndent(books[0], "", "    ")
 	if err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -185,19 +137,18 @@ func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-/*
-pattern: /books/{id}
-method: PATCH
-info: pattern + JSON in request body { is_completed: bool }
-
-succeed:
-  - status code: 204 No content
-  - response body: -
-
-failed:
-  - status code: 400, 404, 409, 500
-  - response body: JSON with error
-*/
+// HandleChangeCompletedStatus Change book status "completed"
+//
+//	@Summary      Change a book status "completed"
+//	@Description  change a book status "completed"
+//	@Tags		  book
+//	@Accept       json
+//	@Param 		  id path int true "Book ID"	Format(int)
+//	@Param 		  completed body  models.BookStatusDTO true "completed value"
+//	@Success      204  {}       No content
+//	@Failure      404  {object}  models.ErrorDTO
+//	@Failure      500  {object}  models.ErrorDTO
+//	@Router       /books/{id} [patch]
 func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
@@ -218,6 +169,10 @@ func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *htt
 	}
 
 	if err := h.queries.UpdateBookStatus(r.Context(), n, status.Completed); err != nil {
+		if errors.Is(err, bookMSG.ErrBookNotFound) {
+			models.DoError(bookMSG.ErrBookNotFound, w, http.StatusNotFound)
+			return
+		}
 		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
@@ -225,90 +180,60 @@ func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusNoContent)
 }
 
-/*
-pattern: /books?completed=false
-method: GET
-info: query params
-
-succeed:
-- status code: 200 Ok
-- response body: JSON represent completed books
-
-failed:
-- status code: 400, 404, 409, 500
-- response body: JSON with error
-*/
-func (h *HTTPHandlers) HandleGetUncompletedBooks(w http.ResponseWriter, r *http.Request) {
+// HandleGetAllBooks Get all books
+//
+//	@Summary      Get all books
+//	@Description  get all books, optionally filtered by status or author
+//	@Tags		  books
+//	@Produce      json
+//	@Param 		  completed query string    false "string valid"
+//	@Param		  author query	  string	false	"Search books by author"
+//	@Success      200  {array}   []models.Book
+//	@Failure      500  {object}  models.ErrorDTO
+//	@Router       /books [get]
+func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	param := query.Get("completed")
+	completedParam := query.Get("completed")
+	authorParam := query.Get("author")
 
-	if param == "" {
-		models.DoError(bookMSG.ErrEmptyQuery, w)
-		return
+	var books []models.Book
+	var err error
+
+	if len(query) == 0 {
+		books, err = h.queries.SelectAllBooks(r.Context())
 	}
 
-	_, err := strconv.ParseBool(param)
+	if len(query) == 1 {
+		if completedParam != "" {
 
-	if err != nil {
-		models.DoError(bookMSG.ErrWrongQueryParamValue, w)
-		return
+			_, err := strconv.ParseBool(completedParam)
+
+			if err != nil {
+				models.DoError(bookMSG.ErrWrongQueryParamValue, w)
+				return
+			}
+
+			books, err = h.queries.SelectBooksByParams(r.Context(), "completed", completedParam)
+		}
+
+		if authorParam != "" {
+			books, err = h.queries.SelectBooksByParams(r.Context(), "author", authorParam)
+		}
 	}
-
-	books, err := h.queries.SelectBooksByParams(r.Context(), "completed", param)
-	if err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.MarshalIndent(books, "", "    ")
-
-	if err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
-		return
-	}
-
-	if _, err := w.Write(data); err != nil {
-		fmt.Println(bookMSG.ErrJsonWrite, err)
-		return
-	}
-}
-
-/*
-pattern: /books?completed=false
-method: GET
-info: query params
-
-succeed:
-- status code: 200 Ok
-- response body: JSON represent completed books
-
-failed:
-- status code: 400, 404, 409, 500
-- response body: JSON with error
-*/
-func (h *HTTPHandlers) HandleGetBooksByAuthor(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	param := query.Get("author")
-
-	if param == "" {
-		models.DoError(bookMSG.ErrEmptyQuery, w)
-		return
-	}
-
-	books, err := h.queries.SelectBooksByParams(r.Context(), "author", param)
-	if err != nil {
-		models.DoError(err, w, http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.MarshalIndent(books, "", "    ")
 
 	if err != nil {
 		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
 
-	if _, err := w.Write(data); err != nil {
+	b, err := json.MarshalIndent(books, "", "    ")
+
+	if err != nil {
+		models.DoError(err, w, http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(b); err != nil {
 		models.DoError(err, w, http.StatusInternalServerError)
 		return
 	}
