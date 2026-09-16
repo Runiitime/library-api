@@ -40,6 +40,35 @@ info:
   version: "1.0"
 paths:
   /books:
+    get:
+      description: get all books, optionally filtered by status or author
+      parameters:
+      - description: string valid
+        in: query
+        name: completed
+        type: string
+      - description: Search books by author
+        in: query
+        name: author
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/models.Book'
+              type: array
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+      summary: Get all books
+      tags:
+      - books
     post:
       consumes:
       - application/json

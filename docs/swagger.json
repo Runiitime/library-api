@@ -11,6 +11,50 @@
     "basePath": "/",
     "paths": {
         "/books": {
+            "get": {
+                "description": "get all books, optionally filtered by status or author",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get all books",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "string valid",
+                        "name": "completed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search books by author",
+                        "name": "author",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/models.Book"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorDTO"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "create a book",
                 "consumes": [

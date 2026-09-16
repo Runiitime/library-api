@@ -190,6 +190,7 @@ func (h *HTTPHandlers) HandleChangeCompletedStatus(w http.ResponseWriter, r *htt
 //	@Param		  author query	  string	false	"Search books by author"
 //	@Success      200  {array}   []models.Book
 //	@Failure      500  {object}  models.ErrorDTO
+//	@Router       /books [get]
 func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	completedParam := query.Get("completed")
