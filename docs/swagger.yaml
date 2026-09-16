@@ -1,0 +1,154 @@
+basePath: /
+definitions:
+  models.Book:
+    properties:
+      author:
+        type: string
+      completed:
+        type: boolean
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      pages:
+        type: integer
+      published_year:
+        type: string
+      review:
+        type: string
+      title:
+        type: string
+    type: object
+  models.BookStatusDTO:
+    properties:
+      completed:
+        type: boolean
+    type: object
+  models.ErrorDTO:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:9091
+info:
+  contact: {}
+  description: API Server for Library application
+  termsOfService: http://swagger.io/terms/
+  title: Library API
+  version: "1.0"
+paths:
+  /books:
+    post:
+      consumes:
+      - application/json
+      description: create a book
+      parameters:
+      - description: book info
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Book'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+      summary: Create a book
+      tags:
+      - book
+  /books/{id}:
+    delete:
+      description: delete a book by id
+      parameters:
+      - description: book ID
+        format: int
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: ""
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+      summary: Delete a book
+      tags:
+      - book
+    get:
+      description: get a book by id
+      parameters:
+      - description: book ID
+        format: int
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+      summary: Get a book by id
+      tags:
+      - book
+    patch:
+      consumes:
+      - application/json
+      description: change a book status "completed"
+      parameters:
+      - description: Book ID
+        format: int
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: completed value
+        in: body
+        name: completed
+        required: true
+        schema:
+          $ref: '#/definitions/models.BookStatusDTO'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: ""
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorDTO'
+      summary: Change a book status "completed"
+      tags:
+      - book
+swagger: "2.0"

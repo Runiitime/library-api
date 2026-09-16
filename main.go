@@ -8,6 +8,13 @@ import (
 	"log"
 )
 
+// @title           Library API
+// @version         1.0
+// @description     API Server for Library application
+// @termsOfService  http://swagger.io/terms/
+
+// @host      localhost:9091
+// @BasePath  /
 func main() {
 	ctx := context.Context(context.Background())
 	cfg := config.GetConfig()
@@ -24,7 +31,7 @@ func main() {
 	hdls := handlers.NewHTTPHandlers(bookQuery)
 	server := handlers.NewServer(hdls)
 
-	if err := server.StartServer(":9091"); err != nil {
+	if err := server.StartServer(":8080"); err != nil {
 		log.Fatalln("Failed to start HTTP server:", err)
 	}
 }

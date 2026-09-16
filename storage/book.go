@@ -119,7 +119,7 @@ func (b *BookQuery) UpdateBookStatus(ctx context.Context, id int, isCompleted bo
 	SET completed=$1, completed_at=$2
 	WHERE id = $3`
 
-	_, err := b.conn.Exec(
+	tag, err := b.conn.Exec(
 		ctx,
 		q,
 		isCompleted,
@@ -130,6 +130,10 @@ func (b *BookQuery) UpdateBookStatus(ctx context.Context, id int, isCompleted bo
 	if err != nil {
 		log.Println(bookMSG.ErrExec, err)
 		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return bookMSG.ErrBookNotFound
 	}
 
 	return nil
