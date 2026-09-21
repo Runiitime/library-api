@@ -7,7 +7,9 @@ import (
 
 	_ "library-api/docs"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -36,7 +38,13 @@ func (s *HTTPServer) StartServer(port string) error {
 	router.Path("/books/{id}").Methods("DELETE").HandlerFunc(s.handlers.HandleDeleteBook)
 	router.Path("/books/{id}").Methods("PATCH").HandlerFunc(s.handlers.HandleChangeCompletedStatus)
 
-	if err := http.ListenAndServe(port, router); err != nil {
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:3000"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
+	if err := http.ListenAndServe(port, corsHandler(router)); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
 			log.Println("Server closed.")
 			return nil
