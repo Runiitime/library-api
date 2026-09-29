@@ -1,18 +1,22 @@
-Backend версия для https://github.com/Runiitime/library-front
----
 ### Одно из домашних заданий, с youtube-канала @nilchanpub
-Закрепление темы REST API, использую ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
-
+Закрепление темы REST API 
+---
+## Используемые технологии
+1. GO
+2. PostgreSQL
+3. Slog
+4. github.com/cloudresty/go-env
+5. Swagger
+6. github.com/gorilla/mux
+7. github.com/jackc/pgx/v5
 ---
 ### Описание:
 Реализовать REST API для реализации Библиотеки.
-Для хранения данных использовала PostgreSQL
-
 ---
 ### Возможности:
 - Добавлять книгу
 - Удалять книгу
-- Помечать как прочитанную
+- Менять статус completed
 - Получить книгу по ID
 - Получить список всех книг
 - Фильтрация книг по флагу "completed" или "author"
