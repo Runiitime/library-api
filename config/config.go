@@ -19,7 +19,7 @@ func GetConfig() string {
 func getConnectionString() string {
 	dbName := env.Get("DB_NAME", "postgres")
 	dbUser := env.Get("DB_USER", "postgres")
-	dbPassword := env.Get("DB_PASSWORD", "postgres")
+	dbPassword := env.Get("DB_PASSWORD", "admin")
 	dbHost := env.Get("DB_HOST", "localhost")
 	dbPort := env.Get("DB_PORT", "5432")
 
