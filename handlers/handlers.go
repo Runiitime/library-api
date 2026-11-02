@@ -214,10 +214,18 @@ func (h *HTTPHandlers) HandleGetAllBooks(w http.ResponseWriter, r *http.Request)
 			}
 
 			books, err = h.queries.SelectBooksByParams(r.Context(), "completed", completedParam)
+
+			if err != nil {
+				models.DoError(err, w, http.StatusInternalServerError)
+			}
 		}
 
 		if authorParam != "" {
 			books, err = h.queries.SelectBooksByParams(r.Context(), "author", authorParam)
+
+			if err != nil {
+				models.DoError(err, w, http.StatusInternalServerError)
+			}
 		}
 	}
 
